@@ -35,7 +35,7 @@ const About = () => {
             <p className="text-lg text-gray-700 leading-relaxed">
               <strong>Physiology Shelf</strong> is a curated digital library dedicated to providing high-quality
               resources in the field of physiology. Our platform brings together thousands of books, notes, and
-              study materials in both English and Urdu, making learning accessible and organized. Whether you're
+              study materials in both English and Urdu, making learning accessible and organized. Whether you&apos;re
               a student, teacher, or researcher, this space is designed to simplify your study journey by
               offering quick <strong>Read Now</strong> access and easy download options — all in one place.
             </p>
