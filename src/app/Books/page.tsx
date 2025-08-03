@@ -7,12 +7,12 @@ import { useRouter } from 'next/navigation';
 interface Book {
   id: string;
   fields: {
-    Title: string;
-    Author: string;
-    Category: string;
-    Tags: string[];
-    DriveLink: string;
-    CoverImage: string;
+    Title?: string;
+    Author?: string;
+    Category?: string;
+    Tags?: string[];
+    DriveLink?: string;
+    CoverImage?: string;
   };
 }
 
@@ -46,8 +46,17 @@ export default function BooksPage() {
 
       setBooks(data);
       setFiltered(data);
-      setCategories([...new Set(data.map((b) => b.fields.Category))] as string[]);
-      setTags([...new Set(data.flatMap((b) => b.fields.Tags))] as string[]);
+
+      // 🛡️ Ensure fields exist before collecting categories/tags
+      const allCategories = data
+        .map((b) => b.fields?.Category)
+        .filter((cat): cat is string => !!cat);
+
+      const allTags = data
+        .flatMap((b) => b.fields?.Tags ?? []);
+
+      setCategories([...new Set(allCategories)]);
+      setTags([...new Set(allTags)]);
     };
 
     fetchBooks();
@@ -58,16 +67,16 @@ export default function BooksPage() {
     let updated = books;
 
     if (selectedCategory) {
-      updated = updated.filter((b) => b.fields.Category === selectedCategory);
+      updated = updated.filter((b) => b.fields?.Category === selectedCategory);
     }
 
     if (selectedTag) {
-      updated = updated.filter((b) => b.fields.Tags.includes(selectedTag));
+      updated = updated.filter((b) => b.fields?.Tags?.includes(selectedTag));
     }
 
     if (search) {
       updated = updated.filter((b) =>
-        b.fields.Title.toLowerCase().includes(search.toLowerCase())
+        b.fields?.Title?.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -129,36 +138,42 @@ export default function BooksPage() {
 
       {/* Book Cards */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {filtered.map((book) => (
-          <Link key={book.id} href={`/Books/${book.id}`}>
-            <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
-              <img
-                src={book.fields.CoverImage}
-                alt={book.fields.Title}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4">
-                <h2 className="text-lg font-semibold text-[#6b4089]">
-                  {book.fields.Title}
-                </h2>
-                <p className="text-sm text-gray-600">{book.fields.Author}</p>
-                <p className="text-xs mt-1">
-                  <strong>Category:</strong> {book.fields.Category}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {book.fields.Tags?.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+        {filtered.map((book) => {
+          const title = book.fields?.Title ?? 'Untitled';
+          const author = book.fields?.Author ?? 'Unknown Author';
+          const cover = book.fields?.CoverImage ?? '/images/placeholder.jpg';
+          const category = book.fields?.Category ?? 'Uncategorized';
+          const tags = book.fields?.Tags ?? [];
+
+          return (
+            <Link key={book.id} href={`/Books/${book.id}`}>
+              <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
+                <img
+                  src={cover}
+                  alt={title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold text-[#6b4089]">{title}</h2>
+                  <p className="text-sm text-gray-600">{author}</p>
+                  <p className="text-xs mt-1">
+                    <strong>Category:</strong> {category}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
