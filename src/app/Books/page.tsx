@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 
 interface AirtableAttachment {
   url: string;
-  [key: string]: unknown;
 }
 
 interface Book {
@@ -59,7 +58,7 @@ export default function BooksPage() {
         setCategories([...new Set(allCategories)]);
         setTags([...new Set(allTags)]);
       } catch (err) {
-        console.error('Failed to fetch books:', err);
+        console.error('❌ Failed to fetch books:', err);
       }
     };
 
@@ -143,10 +142,7 @@ export default function BooksPage() {
       {/* Book Cards */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filtered.map((book) => {
-          const title = book.fields?.Title ?? 'Untitled';
-          const author = book.fields?.Author ?? 'Unknown Author';
-          const category = book.fields?.Category ?? 'Uncategorized';
-          const tags = book.fields?.Tags ?? [];
+          const { Title = 'Untitled', Author = 'Unknown Author', Category = 'Uncategorized', Tags = [] } = book.fields;
 
           let cover = 'https://via.placeholder.com/300x400?text=No+Image';
           if (Array.isArray(book.fields?.CoverImage)) {
@@ -160,17 +156,17 @@ export default function BooksPage() {
               <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
                 <img
                   src={cover}
-                  alt={title}
+                  alt={Title}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
-                  <h2 className="text-lg font-semibold text-[#6b4089]">{title}</h2>
-                  <p className="text-sm text-gray-600">{author}</p>
+                  <h2 className="text-lg font-semibold text-[#6b4089]">{Title}</h2>
+                  <p className="text-sm text-gray-600">{Author}</p>
                   <p className="text-xs mt-1">
-                    <strong>Category:</strong> {category}
+                    <strong>Category:</strong> {Category}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {tags.map((tag) => (
+                    {Tags.map((tag) => (
                       <span
                         key={tag}
                         className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"

@@ -18,7 +18,7 @@ interface AirtableFields {
   Edition?: string;
   Category?: string[];
   Level?: string;
-  CoverImage?: string;
+  CoverImage?: { url: string }[]; // ✅ Fixed: CoverImage is an array of objects
 }
 
 interface AirtableRecord {
@@ -30,7 +30,7 @@ export async function GET() {
   try {
     const apiKey = process.env.AIRTABLE_API_KEY;
     const baseId = process.env.AIRTABLE_BASE_ID;
-    const tableName = 'BooksManagement'; // Update if your table name is different
+    const tableName = 'BooksManagement';
 
     const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
       headers: {
@@ -58,7 +58,7 @@ export async function GET() {
       edition: record.fields.Edition || '',
       category: record.fields.Category || [],
       level: record.fields.Level || '',
-      thumbnail: record.fields.CoverImage || '',
+      thumbnail: record.fields.CoverImage?.[0]?.url || '', // ✅ Extract URL from attachment
     }));
 
     return NextResponse.json(books);
