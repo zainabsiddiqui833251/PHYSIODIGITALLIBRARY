@@ -24,7 +24,7 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔐 Session check
+  // 🔐 Route protection
   useEffect(() => {
     const access = sessionStorage.getItem('access_granted');
     const expiry = sessionStorage.getItem('access_expires');
@@ -34,7 +34,7 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
     }
   }, [router]);
 
-  // 🔄 Fetch book by ID
+  // 🔄 Fetch book data
   useEffect(() => {
     const fetchBook = async () => {
       try {
@@ -60,18 +60,17 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
   return (
     <section className="min-h-screen bg-[#fdf6fd] px-4 md:px-10 py-10 text-gray-800 animate-fade-in">
       <div className="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-xl border border-purple-100 transition-all duration-300">
-
-        {/* 🔙 Back Button */}
+        {/* Back Button */}
         <button
-          onClick={() => router.push('/Books')}
-          className="mb-6 text-sm text-purple-700 hover:text-purple-900 transition"
+          onClick={() => router.back()}
+          className="mb-6 bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200 transition"
         >
-          ← Back to All Books
+          ← Back
         </button>
 
         {/* Thumbnail */}
         <img
-          src={book.thumbnail || 'https://via.placeholder.com/300x400?text=No+Image'}
+          src={book.thumbnail}
           alt={book.title}
           className="w-full h-64 object-cover rounded-lg mb-6 shadow-sm"
         />
@@ -80,10 +79,10 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
         <h1 className="text-3xl font-bold text-[#6b4089] mb-2">{book.title}</h1>
         <p className="text-md text-gray-600 mb-1"><strong>Author:</strong> {book.author}</p>
         <p className="text-sm text-gray-600 mb-1"><strong>Category:</strong> {book.category?.join(', ')}</p>
-        {book.edition && <p className="text-sm text-gray-600 mb-1"><strong>Edition:</strong> {book.edition}</p>}
-        {book.language && <p className="text-sm text-gray-600 mb-1"><strong>Language:</strong> {book.language}</p>}
-        {book.level && <p className="text-sm text-gray-600 mb-1"><strong>Level:</strong> {book.level}</p>}
-        {book.subject && <p className="text-sm text-gray-600 mb-1"><strong>Subject:</strong> {book.subject}</p>}
+        <p className="text-sm text-gray-600 mb-1"><strong>Edition:</strong> {book.edition}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Language:</strong> {book.language}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Level:</strong> {book.level}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Subject:</strong> {book.subject}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mt-2 mb-4">
@@ -102,6 +101,7 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4">
+          {/* Read Now (opens Drive preview in browser) */}
           <a
             href={book.driveLink}
             target="_blank"
@@ -110,10 +110,12 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
           >
             📖 Read Now
           </a>
+
+          {/* Download (forces download) */}
           <a
-            href={book.driveLink}
+            href={`${book.driveLink}?export=download`}
             target="_blank"
-            download
+            rel="noopener noreferrer"
             className="bg-white border border-[#c084fc] text-[#6b4089] hover:bg-[#f4e8ff] px-6 py-2 rounded-full shadow transition duration-200 hover:scale-105"
           >
             ⬇️ Download
