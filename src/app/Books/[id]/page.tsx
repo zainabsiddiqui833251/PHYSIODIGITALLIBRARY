@@ -17,6 +17,7 @@ interface Book {
   edition?: string;
   subject?: string;
   level?: string;
+  Downloadlink?:string;
 }
 
 export default function BookInfoPage({ params }: { params: { id: string } }) {
@@ -113,9 +114,9 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
 
           {/* Download (forces download) */}
           <a
-            href={`${book.driveLink}?export=download`}
+            href={book.Downloadlink}
             target="_blank"
-            rel="noopener noreferrer"
+            download
             className="bg-white border border-[#c084fc] text-[#6b4089] hover:bg-[#f4e8ff] px-6 py-2 rounded-full shadow transition duration-200 hover:scale-105"
           >
             ⬇️ Download
