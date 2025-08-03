@@ -30,7 +30,7 @@ export async function GET() {
   try {
     const apiKey = process.env.AIRTABLE_API_KEY;
     const baseId = process.env.AIRTABLE_BASE_ID;
-    const tableName = 'Books'; // Update if your table name is different
+    const tableName = 'BooksManagement'; // Update if your table name is different
 
     const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
       headers: {
