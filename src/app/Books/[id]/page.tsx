@@ -1,48 +1,28 @@
 'use client';
 
-import { notFound, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 interface Book {
   id: string;
   title: string;
   author: string;
-  category: string;
+  category: string[];
   tags: string[];
   description: string;
   driveLink: string;
   thumbnail: string;
+  language?: string;
+  edition?: string;
+  subject?: string;
+  level?: string;
 }
-
-// Sample book data
-const books: Book[] = [
-  {
-    id: '1',
-    title: 'Guyton & Hall Physiology',
-    author: 'John E. Hall',
-    category: 'General',
-    tags: ['Cardiovascular', 'Cell'],
-    description:
-      'A comprehensive explanation of human physiology focusing on cellular and cardiovascular systems.',
-    driveLink: 'https://drive.google.com/file/d/1',
-    thumbnail: 'https://via.placeholder.com/600x300.png?text=Guyton+Book',
-  },
-  {
-    id: '2',
-    title: 'Neurophysiology Made Simple',
-    author: 'Jane Doe',
-    category: 'Neurophysiology',
-    tags: ['Brain', 'Neurons'],
-    description: 'A student-friendly introduction to brain and neuron function.',
-    driveLink: 'https://drive.google.com/file/d/2',
-    thumbnail: 'https://via.placeholder.com/600x300.png?text=Neuro+Book',
-  },
-];
 
 export default function BookInfoPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-
-  const book = books.find((b) => b.id === params.id);
+  const [book, setBook] = useState<Book | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // 🔐 Session check
   useEffect(() => {
@@ -54,6 +34,27 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
     }
   }, [router]);
 
+  // 🔄 Fetch book by ID
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        const res = await fetch('/api/books');
+        const data: Book[] = await res.json();
+        const match = data.find((b) => b.id === params.id);
+        if (!match) return setBook(null);
+        setBook(match);
+      } catch (err) {
+        console.error('❌ Failed to fetch book:', err);
+        setBook(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBook();
+  }, [params.id]);
+
+  if (loading) return <p className="text-center mt-10 text-purple-700">Loading book...</p>;
   if (!book) return notFound();
 
   return (
@@ -68,12 +69,12 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
 
         {/* Book Info */}
         <h1 className="text-3xl font-bold text-[#6b4089] mb-2">{book.title}</h1>
-        <p className="text-md text-gray-600 mb-1">
-          <strong>Author:</strong> {book.author}
-        </p>
-        <p className="text-sm text-gray-600 mb-1">
-          <strong>Category:</strong> {book.category}
-        </p>
+        <p className="text-md text-gray-600 mb-1"><strong>Author:</strong> {book.author}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Category:</strong> {book.category?.join(', ')}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Edition:</strong> {book.edition}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Language:</strong> {book.language}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Level:</strong> {book.level}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Subject:</strong> {book.subject}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mt-2 mb-4">
