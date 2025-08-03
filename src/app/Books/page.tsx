@@ -6,35 +6,15 @@ import { useRouter } from 'next/navigation';
 
 interface Book {
   id: string;
-  title: string;
-  author: string;
-  category: string;
-  tags: string[];
-  driveLink: string;
-  thumbnail: string;
+  fields: {
+    Title: string;
+    Author: string;
+    Category: string;
+    Tags: string[];
+    DriveLink: string;
+    CoverImage: string;
+  };
 }
-
-// 🔰 Sample data (replace later)
-const sampleBooks: Book[] = [
-  {
-    id: '1',
-    title: 'Guyton & Hall Physiology',
-    author: 'John E. Hall',
-    category: 'General',
-    tags: ['Cardiovascular', 'Cell'],
-    driveLink: 'https://drive.google.com/file/d/1',
-    thumbnail: 'https://via.placeholder.com/400x200.png?text=Guyton+Book',
-  },
-  {
-    id: '2',
-    title: 'Neurophysiology Made Simple',
-    author: 'Jane Doe',
-    category: 'Neurophysiology',
-    tags: ['Brain', 'Neurons'],
-    driveLink: 'https://drive.google.com/file/d/2',
-    thumbnail: 'https://via.placeholder.com/400x200.png?text=Neuro+Book',
-  },
-];
 
 export default function BooksPage() {
   const router = useRouter();
@@ -46,7 +26,7 @@ export default function BooksPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
 
-  // 🔐 Route Protection with session timeout check
+  // 🔐 Route Protection
   useEffect(() => {
     const access = sessionStorage.getItem('access_granted');
     const expiry = sessionStorage.getItem('access_expires');
@@ -57,26 +37,37 @@ export default function BooksPage() {
     }
   }, [router]);
 
+  // 🔁 Fetch data from Airtable
   useEffect(() => {
-    const data = sampleBooks;
-    setBooks(data);
-    setFiltered(data);
-    setCategories([...new Set(data.map((b) => b.category))]);
-    setTags([...new Set(data.flatMap((b) => b.tags))]);
+    const fetchBooks = async () => {
+      const res = await fetch('/api/books');
+      const json = await res.json();
+      const data: Book[] = json;
+
+      setBooks(data);
+      setFiltered(data);
+      setCategories([...new Set(data.map((b) => b.fields.Category))] as string[]);
+      setTags([...new Set(data.flatMap((b) => b.fields.Tags))] as string[]);
+    };
+
+    fetchBooks();
   }, []);
 
+  // 🔍 Apply filters
   useEffect(() => {
     let updated = books;
 
     if (selectedCategory) {
-      updated = updated.filter((b) => b.category === selectedCategory);
+      updated = updated.filter((b) => b.fields.Category === selectedCategory);
     }
+
     if (selectedTag) {
-      updated = updated.filter((b) => b.tags.includes(selectedTag));
+      updated = updated.filter((b) => b.fields.Tags.includes(selectedTag));
     }
+
     if (search) {
       updated = updated.filter((b) =>
-        b.title.toLowerCase().includes(search.toLowerCase())
+        b.fields.Title.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -90,7 +81,7 @@ export default function BooksPage() {
 
   return (
     <section className="py-10 px-4 md:px-12 bg-[#fdf6fd] min-h-screen text-gray-900 animate-fade-in">
-      {/* Header + Logout */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-[#6b4089]">📚 All Books</h1>
         <button
@@ -117,7 +108,9 @@ export default function BooksPage() {
         >
           <option value="">All Categories</option>
           {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
           ))}
         </select>
         <select
@@ -127,7 +120,9 @@ export default function BooksPage() {
         >
           <option value="">All Tags</option>
           {tags.map((tag) => (
-            <option key={tag} value={tag}>{tag}</option>
+            <option key={tag} value={tag}>
+              {tag}
+            </option>
           ))}
         </select>
       </div>
@@ -138,18 +133,20 @@ export default function BooksPage() {
           <Link key={book.id} href={`/Books/${book.id}`}>
             <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
               <img
-                src={book.thumbnail}
-                alt={book.title}
+                src={book.fields.CoverImage}
+                alt={book.fields.Title}
                 className="w-full h-48 object-cover"
               />
               <div className="p-4">
-                <h2 className="text-lg font-semibold text-[#6b4089]">{book.title}</h2>
-                <p className="text-sm text-gray-600">{book.author}</p>
+                <h2 className="text-lg font-semibold text-[#6b4089]">
+                  {book.fields.Title}
+                </h2>
+                <p className="text-sm text-gray-600">{book.fields.Author}</p>
                 <p className="text-xs mt-1">
-                  <strong>Category:</strong> {book.category}
+                  <strong>Category:</strong> {book.fields.Category}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {book.tags.map((tag) => (
+                  {book.fields.Tags?.map((tag) => (
                     <span
                       key={tag}
                       className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
