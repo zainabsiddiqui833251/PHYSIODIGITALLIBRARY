@@ -10,7 +10,7 @@ interface AirtableFields {
   Title: string;
   Author: string;
   DriveLink: string;
-  'Download link'?: string;
+  Dowloadlink?: string; // ✅ Updated field name
   Subject?: string;
   Tags?: string[];
   Description?: DescriptionType;
@@ -18,7 +18,7 @@ interface AirtableFields {
   Edition?: string;
   Category?: string[];
   Level?: string;
-  CoverImage?: { url: string }[]; // ✅ Fixed: CoverImage is an array of objects
+  CoverImage?: { url: string }[];
 }
 
 interface AirtableRecord {
@@ -50,7 +50,8 @@ export async function GET() {
       id: record.id,
       title: record.fields.Title,
       author: record.fields.Author,
-      driveLink: record.fields['Download link'] || record.fields.DriveLink,
+      driveLink: record.fields.DriveLink,
+      downloadLink: record.fields.Dowloadlink || record.fields.DriveLink, // ✅ use correct field
       subject: record.fields.Subject || '',
       tags: record.fields.Tags || [],
       description: record.fields.Description?.value ?? '',
@@ -58,7 +59,7 @@ export async function GET() {
       edition: record.fields.Edition || '',
       category: record.fields.Category || [],
       level: record.fields.Level || '',
-      thumbnail: record.fields.CoverImage?.[0]?.url || '', // ✅ Extract URL from attachment
+      thumbnail: record.fields.CoverImage?.[0]?.url || '',
     }));
 
     return NextResponse.json(books);

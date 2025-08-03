@@ -12,12 +12,12 @@ interface Book {
   tags: string[];
   description: string;
   driveLink: string;
+  downloadLink: string;
   thumbnail: string;
   language?: string;
   edition?: string;
   subject?: string;
   level?: string;
-  Downloadlink?:string;
 }
 
 export default function BookInfoPage({ params }: { params: { id: string } }) {
@@ -25,7 +25,6 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔐 Route protection
   useEffect(() => {
     const access = sessionStorage.getItem('access_granted');
     const expiry = sessionStorage.getItem('access_expires');
@@ -35,15 +34,13 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
     }
   }, [router]);
 
-  // 🔄 Fetch book data
   useEffect(() => {
     const fetchBook = async () => {
       try {
         const res = await fetch('/api/books');
         const data: Book[] = await res.json();
         const match = data.find((b) => b.id === params.id);
-        if (!match) return setBook(null);
-        setBook(match);
+        setBook(match || null);
       } catch (err) {
         console.error('❌ Failed to fetch book:', err);
         setBook(null);
@@ -51,7 +48,6 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
         setLoading(false);
       }
     };
-
     fetchBook();
   }, [params.id]);
 
@@ -64,9 +60,9 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="mb-6 bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200 transition"
+          className="mb-4 text-sm text-purple-600 underline hover:text-purple-800 transition"
         >
-          ← Back
+          ← Go Back
         </button>
 
         {/* Thumbnail */}
@@ -79,7 +75,7 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
         {/* Book Info */}
         <h1 className="text-3xl font-bold text-[#6b4089] mb-2">{book.title}</h1>
         <p className="text-md text-gray-600 mb-1"><strong>Author:</strong> {book.author}</p>
-        <p className="text-sm text-gray-600 mb-1"><strong>Category:</strong> {book.category?.join(', ')}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Category:</strong> {book.category.join(', ')}</p>
         <p className="text-sm text-gray-600 mb-1"><strong>Edition:</strong> {book.edition}</p>
         <p className="text-sm text-gray-600 mb-1"><strong>Language:</strong> {book.language}</p>
         <p className="text-sm text-gray-600 mb-1"><strong>Level:</strong> {book.level}</p>
@@ -102,7 +98,6 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4">
-          {/* Read Now (opens Drive preview in browser) */}
           <a
             href={book.driveLink}
             target="_blank"
@@ -111,11 +106,10 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
           >
             📖 Read Now
           </a>
-
-          {/* Download (forces download) */}
           <a
-            href={book.Downloadlink}
+            href={book.downloadLink}
             target="_blank"
+            rel="noopener noreferrer"
             download
             className="bg-white border border-[#c084fc] text-[#6b4089] hover:bg-[#f4e8ff] px-6 py-2 rounded-full shadow transition duration-200 hover:scale-105"
           >
