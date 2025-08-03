@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY!;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!;
-const TABLE_NAME = 'Books Management'; // 🔁 change if your table is named differently
+const TABLE_NAME = 'BooksManagement'; // 🔁 change if your table is named differently
 
 export async function GET() {
   const res = await fetch(
