@@ -30,8 +30,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-       <head>
+      <head>
         {/* ✅ Add this line */}
+        <meta property="og:title" content="PhysioShelf , Digital Physiology Library" />
+        <meta property="og:description" content="Access hundreds of physiology books for free. Designed for students and professionals." />
+        <meta property="og:image" content="/favicon.png" />
+        <meta property="og:url" content="https://physioshelf.vercel.app/" />
+        <meta property="og:type" content="website" />
         <link rel="icon" href="/favicon.png" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
