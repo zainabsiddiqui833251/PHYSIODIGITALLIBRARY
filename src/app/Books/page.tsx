@@ -10,7 +10,7 @@ interface AirtableAttachment {
 
 interface Book {
   id: string;
-  fields: {
+  fields?: {
     Title?: string;
     Author?: string;
     Category?: string;
@@ -46,14 +46,16 @@ export default function BooksPage() {
       try {
         const res = await fetch('/api/books');
         const data: Book[] = await res.json();
-        setBooks(data);
-        setFiltered(data);
+        const validBooks = data.filter((b) => b.fields && b.fields.Title); // ✅ ensure fields exist
 
-        const allCategories = data
+        setBooks(validBooks);
+        setFiltered(validBooks);
+
+        const allCategories = validBooks
           .map((b) => b.fields?.Category)
           .filter((cat): cat is string => !!cat);
 
-        const allTags = data.flatMap((b) => b.fields?.Tags ?? []);
+        const allTags = validBooks.flatMap((b) => b.fields?.Tags ?? []);
 
         setCategories([...new Set(allCategories)]);
         setTags([...new Set(allTags)]);
@@ -142,13 +144,17 @@ export default function BooksPage() {
       {/* Book Cards */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filtered.map((book) => {
-          const { Title = 'Untitled', Author = 'Unknown Author', Category = 'Uncategorized', Tags = [] } = book.fields;
+          const fields = book.fields!;
+          const title = fields.Title || '';
+          const author = fields.Author || '';
+          const category = fields.Category || '';
+          const tags = fields.Tags || [];
 
           let cover = 'https://via.placeholder.com/300x400?text=No+Image';
-          if (Array.isArray(book.fields?.CoverImage)) {
-            cover = book.fields.CoverImage[0]?.url ?? cover;
-          } else if (typeof book.fields?.CoverImage === 'string') {
-            cover = book.fields.CoverImage;
+          if (Array.isArray(fields.CoverImage)) {
+            cover = fields.CoverImage[0]?.url ?? cover;
+          } else if (typeof fields.CoverImage === 'string') {
+            cover = fields.CoverImage;
           }
 
           return (
@@ -156,17 +162,17 @@ export default function BooksPage() {
               <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
                 <img
                   src={cover}
-                  alt={Title}
+                  alt={title}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
-                  <h2 className="text-lg font-semibold text-[#6b4089]">{Title}</h2>
-                  <p className="text-sm text-gray-600">{Author}</p>
+                  <h2 className="text-lg font-semibold text-[#6b4089]">{title}</h2>
+                  <p className="text-sm text-gray-600">{author}</p>
                   <p className="text-xs mt-1">
-                    <strong>Category:</strong> {Category}
+                    <strong>Category:</strong> {category}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {Tags.map((tag) => (
+                    {tags.map((tag) => (
                       <span
                         key={tag}
                         className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
