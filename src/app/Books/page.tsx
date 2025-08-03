@@ -12,7 +12,7 @@ interface Book {
     Category?: string;
     Tags?: string[];
     DriveLink?: string;
-    CoverImage?: string;
+    CoverImage?: any; // can be string (URL) or array (Attachment)
   };
 }
 
@@ -47,13 +47,11 @@ export default function BooksPage() {
       setBooks(data);
       setFiltered(data);
 
-      // 🛡️ Ensure fields exist before collecting categories/tags
       const allCategories = data
         .map((b) => b.fields?.Category)
         .filter((cat): cat is string => !!cat);
 
-      const allTags = data
-        .flatMap((b) => b.fields?.Tags ?? []);
+      const allTags = data.flatMap((b) => b.fields?.Tags ?? []);
 
       setCategories([...new Set(allCategories)]);
       setTags([...new Set(allTags)]);
@@ -141,9 +139,14 @@ export default function BooksPage() {
         {filtered.map((book) => {
           const title = book.fields?.Title ?? 'Untitled';
           const author = book.fields?.Author ?? 'Unknown Author';
-          const cover = book.fields?.CoverImage ?? '/images/placeholder.jpg';
           const category = book.fields?.Category ?? 'Uncategorized';
           const tags = book.fields?.Tags ?? [];
+
+          // 🖼️ Handle CoverImage field (URL or Attachment array)
+          const cover =
+            Array.isArray(book.fields?.CoverImage)
+              ? book.fields.CoverImage[0]?.url
+              : book.fields?.CoverImage || 'https://via.placeholder.com/300x400?text=No+Image';
 
           return (
             <Link key={book.id} href={`/Books/${book.id}`}>
@@ -152,6 +155,9 @@ export default function BooksPage() {
                   src={cover}
                   alt={title}
                   className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/300x400?text=No+Image';
+                  }}
                 />
                 <div className="p-4">
                   <h2 className="text-lg font-semibold text-[#6b4089]">{title}</h2>
