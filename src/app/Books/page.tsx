@@ -4,20 +4,14 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-interface AirtableAttachment {
-  url: string;
-}
-
 interface Book {
   id: string;
-  fields?: {
-    Title?: string;
-    Author?: string;
-    Category?: string;
-    Tags?: string[];
-    DriveLink?: string;
-    CoverImage?: string | AirtableAttachment[];
-  };
+  title: string;
+  author: string;
+  category: string[];
+  tags: string[];
+  driveLink: string;
+  thumbnail: string;
 }
 
 export default function BooksPage() {
@@ -40,22 +34,18 @@ export default function BooksPage() {
     }
   }, [router]);
 
-  // 🔁 Fetch data from Airtable
+  // 🔁 Fetch books from API
   useEffect(() => {
     const fetchBooks = async () => {
       try {
         const res = await fetch('/api/books');
         const data: Book[] = await res.json();
-        const validBooks = data.filter((b) => b.fields && b.fields.Title); // ✅ ensure fields exist
 
-        setBooks(validBooks);
-        setFiltered(validBooks);
+        setBooks(data);
+        setFiltered(data);
 
-        const allCategories = validBooks
-          .map((b) => b.fields?.Category)
-          .filter((cat): cat is string => !!cat);
-
-        const allTags = validBooks.flatMap((b) => b.fields?.Tags ?? []);
+        const allCategories = data.flatMap((b) => b.category ?? []);
+        const allTags = data.flatMap((b) => b.tags ?? []);
 
         setCategories([...new Set(allCategories)]);
         setTags([...new Set(allTags)]);
@@ -72,16 +62,16 @@ export default function BooksPage() {
     let updated = books;
 
     if (selectedCategory) {
-      updated = updated.filter((b) => b.fields?.Category === selectedCategory);
+      updated = updated.filter((b) => b.category.includes(selectedCategory));
     }
 
     if (selectedTag) {
-      updated = updated.filter((b) => b.fields?.Tags?.includes(selectedTag));
+      updated = updated.filter((b) => b.tags.includes(selectedTag));
     }
 
     if (search) {
       updated = updated.filter((b) =>
-        b.fields?.Title?.toLowerCase().includes(search.toLowerCase())
+        b.title.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -143,49 +133,34 @@ export default function BooksPage() {
 
       {/* Book Cards */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {filtered.map((book) => {
-          const fields = book.fields!;
-          const title = fields.Title || '';
-          const author = fields.Author || '';
-          const category = fields.Category || '';
-          const tags = fields.Tags || [];
-
-          let cover = 'https://via.placeholder.com/300x400?text=No+Image';
-          if (Array.isArray(fields.CoverImage)) {
-            cover = fields.CoverImage[0]?.url ?? cover;
-          } else if (typeof fields.CoverImage === 'string') {
-            cover = fields.CoverImage;
-          }
-
-          return (
-            <Link key={book.id} href={`/Books/${book.id}`}>
-              <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
-                <img
-                  src={cover}
-                  alt={title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold text-[#6b4089]">{title}</h2>
-                  <p className="text-sm text-gray-600">{author}</p>
-                  <p className="text-xs mt-1">
-                    <strong>Category:</strong> {category}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+        {filtered.map((book) => (
+          <Link key={book.id} href={`/Books/${book.id}`}>
+            <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
+              <img
+                src={book.thumbnail || 'https://via.placeholder.com/300x400?text=No+Image'}
+                alt={book.title}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-4">
+                <h2 className="text-lg font-semibold text-[#6b4089]">{book.title}</h2>
+                <p className="text-sm text-gray-600">{book.author}</p>
+                <p className="text-xs mt-1">
+                  <strong>Category:</strong> {book.category?.join(', ') || 'Uncategorized'}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {book.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
-            </Link>
-          );
-        })}
+            </div>
+          </Link>
+        ))}
       </div>
     </section>
   );
