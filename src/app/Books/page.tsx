@@ -4,6 +4,11 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+interface AirtableAttachment {
+  url: string;
+  [key: string]: unknown;
+}
+
 interface Book {
   id: string;
   fields: {
@@ -12,7 +17,7 @@ interface Book {
     Category?: string;
     Tags?: string[];
     DriveLink?: string;
-    CoverImage?: any; // can be string (URL) or array (Attachment)
+    CoverImage?: string | AirtableAttachment[];
   };
 }
 
@@ -30,7 +35,6 @@ export default function BooksPage() {
   useEffect(() => {
     const access = sessionStorage.getItem('access_granted');
     const expiry = sessionStorage.getItem('access_expires');
-
     if (access !== 'true' || !expiry || Number(expiry) < Date.now()) {
       sessionStorage.clear();
       router.push('/Login');
@@ -40,21 +44,23 @@ export default function BooksPage() {
   // 🔁 Fetch data from Airtable
   useEffect(() => {
     const fetchBooks = async () => {
-      const res = await fetch('/api/books');
-      const json = await res.json();
-      const data: Book[] = json;
+      try {
+        const res = await fetch('/api/books');
+        const data: Book[] = await res.json();
+        setBooks(data);
+        setFiltered(data);
 
-      setBooks(data);
-      setFiltered(data);
+        const allCategories = data
+          .map((b) => b.fields?.Category)
+          .filter((cat): cat is string => !!cat);
 
-      const allCategories = data
-        .map((b) => b.fields?.Category)
-        .filter((cat): cat is string => !!cat);
+        const allTags = data.flatMap((b) => b.fields?.Tags ?? []);
 
-      const allTags = data.flatMap((b) => b.fields?.Tags ?? []);
-
-      setCategories([...new Set(allCategories)]);
-      setTags([...new Set(allTags)]);
+        setCategories([...new Set(allCategories)]);
+        setTags([...new Set(allTags)]);
+      } catch (err) {
+        console.error('Failed to fetch books:', err);
+      }
     };
 
     fetchBooks();
@@ -142,11 +148,12 @@ export default function BooksPage() {
           const category = book.fields?.Category ?? 'Uncategorized';
           const tags = book.fields?.Tags ?? [];
 
-          // 🖼️ Handle CoverImage field (URL or Attachment array)
-          const cover =
-            Array.isArray(book.fields?.CoverImage)
-              ? book.fields.CoverImage[0]?.url
-              : book.fields?.CoverImage || 'https://via.placeholder.com/300x400?text=No+Image';
+          let cover = 'https://via.placeholder.com/300x400?text=No+Image';
+          if (Array.isArray(book.fields?.CoverImage)) {
+            cover = book.fields.CoverImage[0]?.url ?? cover;
+          } else if (typeof book.fields?.CoverImage === 'string') {
+            cover = book.fields.CoverImage;
+          }
 
           return (
             <Link key={book.id} href={`/Books/${book.id}`}>
@@ -155,9 +162,6 @@ export default function BooksPage() {
                   src={cover}
                   alt={title}
                   className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/300x400?text=No+Image';
-                  }}
                 />
                 <div className="p-4">
                   <h2 className="text-lg font-semibold text-[#6b4089]">{title}</h2>
