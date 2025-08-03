@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 interface Book {
   id: string;
@@ -10,154 +10,115 @@ interface Book {
   author: string;
   category: string[];
   tags: string[];
+  description: string;
   driveLink: string;
   thumbnail: string;
-  description: string;
+  language?: string;
+  edition?: string;
+  subject?: string;
+  level?: string;
 }
 
-export default function BooksPage() {
+export default function BookInfoPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [books, setBooks] = useState<Book[]>([]);
-  const [filtered, setFiltered] = useState<Book[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedTag, setSelectedTag] = useState('');
+  const [book, setBook] = useState<Book | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // 🔐 Route Protection
+  // 🔐 Session check
   useEffect(() => {
     const access = sessionStorage.getItem('access_granted');
     const expiry = sessionStorage.getItem('access_expires');
-
     if (access !== 'true' || !expiry || Number(expiry) < Date.now()) {
       sessionStorage.clear();
       router.push('/Login');
     }
   }, [router]);
 
-  // 🔁 Fetch books from API
+  // 🔄 Fetch book by ID
   useEffect(() => {
-    const fetchBooks = async () => {
-      const res = await fetch('/api/books');
-      const json = await res.json();
-      const data: Book[] = json;
-
-      setBooks(data);
-      setFiltered(data);
-      setCategories([...new Set(data.flatMap((b) => b.category || []))]);
-      setTags([...new Set(data.flatMap((b) => b.tags || []))]);
+    const fetchBook = async () => {
+      try {
+        const res = await fetch('/api/books');
+        const data: Book[] = await res.json();
+        const match = data.find((b) => b.id === params.id);
+        if (!match) return setBook(null);
+        setBook(match);
+      } catch (err) {
+        console.error('❌ Failed to fetch book:', err);
+        setBook(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchBooks();
-  }, []);
+    fetchBook();
+  }, [params.id]);
 
-  // 🔍 Apply Filters
-  useEffect(() => {
-    let updated = books;
-
-    if (selectedCategory) {
-      updated = updated.filter((b) => b.category.includes(selectedCategory));
-    }
-
-    if (selectedTag) {
-      updated = updated.filter((b) => b.tags.includes(selectedTag));
-    }
-
-    if (search) {
-      updated = updated.filter((b) =>
-        b.title.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    setFiltered(updated);
-  }, [books, selectedCategory, selectedTag, search]);
-
-  const handleLogout = () => {
-    sessionStorage.clear();
-    router.push('/Login');
-  };
+  if (loading) return <p className="text-center mt-10 text-purple-700">Loading book...</p>;
+  if (!book) return notFound();
 
   return (
-    <section className="py-10 px-4 md:px-12 bg-[#fdf6fd] min-h-screen text-gray-900 animate-fade-in">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-[#6b4089]">📚 All Books</h1>
+    <section className="min-h-screen bg-[#fdf6fd] px-4 md:px-10 py-10 text-gray-800 animate-fade-in">
+      <div className="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-xl border border-purple-100 transition-all duration-300">
+
+        {/* 🔙 Back Button */}
         <button
-          onClick={handleLogout}
-          className="bg-red-100 text-red-700 font-semibold px-4 py-2 rounded shadow hover:bg-red-200 transition"
+          onClick={() => router.push('/Books')}
+          className="mb-6 text-sm text-purple-700 hover:text-purple-900 transition"
         >
-          🚪 Logout
+          ← Back to All Books
         </button>
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-10">
-        <input
-          type="text"
-          placeholder="Search by title..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 w-full md:w-1/3 border border-purple-200 rounded shadow-sm"
+        {/* Thumbnail */}
+        <img
+          src={book.thumbnail || 'https://via.placeholder.com/300x400?text=No+Image'}
+          alt={book.title}
+          className="w-full h-64 object-cover rounded-lg mb-6 shadow-sm"
         />
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 border border-purple-200 rounded w-full md:w-1/4"
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedTag}
-          onChange={(e) => setSelectedTag(e.target.value)}
-          className="px-4 py-2 border border-purple-200 rounded w-full md:w-1/4"
-        >
-          <option value="">All Tags</option>
-          {tags.map((tag) => (
-            <option key={tag} value={tag}>
-              {tag}
-            </option>
-          ))}
-        </select>
-      </div>
 
-      {/* Book Cards */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {filtered.map((book) => (
-          <Link key={book.id} href={`/Books/${book.id}`}>
-            <div className="bg-white border border-purple-100 shadow hover:shadow-xl transition-all rounded-xl overflow-hidden cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]">
-              <img
-                src={book.thumbnail}
-                alt={book.title}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4">
-                <h2 className="text-lg font-semibold text-[#6b4089]">
-                  {book.title}
-                </h2>
-                <p className="text-sm text-gray-600">{book.author}</p>
-                <p className="text-xs mt-1">
-                  <strong>Category:</strong> {book.category.join(', ')}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {book.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
+        {/* Book Info */}
+        <h1 className="text-3xl font-bold text-[#6b4089] mb-2">{book.title}</h1>
+        <p className="text-md text-gray-600 mb-1"><strong>Author:</strong> {book.author}</p>
+        <p className="text-sm text-gray-600 mb-1"><strong>Category:</strong> {book.category?.join(', ')}</p>
+        {book.edition && <p className="text-sm text-gray-600 mb-1"><strong>Edition:</strong> {book.edition}</p>}
+        {book.language && <p className="text-sm text-gray-600 mb-1"><strong>Language:</strong> {book.language}</p>}
+        {book.level && <p className="text-sm text-gray-600 mb-1"><strong>Level:</strong> {book.level}</p>}
+        {book.subject && <p className="text-sm text-gray-600 mb-1"><strong>Subject:</strong> {book.subject}</p>}
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2 mt-2 mb-4">
+          {book.tags.map((tag) => (
+            <span
+              key={tag}
+              className="bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full shadow-sm"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        {/* Description */}
+        <p className="text-md text-gray-700 leading-relaxed mb-6">{book.description}</p>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4">
+          <a
+            href={book.driveLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-[#c084fc] hover:bg-[#a855f7] text-white px-6 py-2 rounded-full shadow transition duration-200 hover:scale-105"
+          >
+            📖 Read Now
+          </a>
+          <a
+            href={book.driveLink}
+            target="_blank"
+            download
+            className="bg-white border border-[#c084fc] text-[#6b4089] hover:bg-[#f4e8ff] px-6 py-2 rounded-full shadow transition duration-200 hover:scale-105"
+          >
+            ⬇️ Download
+          </a>
+        </div>
       </div>
     </section>
   );
