@@ -9,23 +9,30 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Redirect to /Home if already logged in
+  // Redirect to /Home if already logged in and session is valid
   useEffect(() => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('access_granted') === 'true') {
-      router.push('/Home');
+    if (typeof window !== 'undefined') {
+      const accessGranted = sessionStorage.getItem('access_granted');
+      const expiry = parseInt(sessionStorage.getItem('access_expires') || '0');
+
+      if (accessGranted === 'true' && Date.now() < expiry) {
+        router.push('/Home');
+      } else {
+        sessionStorage.removeItem('access_granted');
+        sessionStorage.removeItem('access_expires');
+      }
     }
   }, [router]);
 
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://api.sheetbest.com/sheets/41760da2-feaa-45bd-b2b3-dcb417d4331c');
-      const data = await res.json();
+      const res = await fetch('https://script.google.com/macros/s/AKfycbz2j690LZBrAhyuU8YnHqtgl3Zd6PjjncelvrkT8VpJtJsbzwSYfYfwlvETJB0ZQBK5DA/exec'); // ⬅️ Replace with your actual URL
+      const latestCode = await res.text();
 
-      const latestCode = data[data.length - 1]?.code?.trim();
-
-      if (codeInput.trim() === latestCode) {
+      if (codeInput.trim() === latestCode.trim()) {
         sessionStorage.setItem('access_granted', 'true');
+
         // Set session expiration time (30 minutes)
         const expiry = new Date().getTime() + 30 * 60 * 1000;
         sessionStorage.setItem('access_expires', expiry.toString());

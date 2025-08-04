@@ -25,12 +25,15 @@ export default function BookInfoPage({ params }: { params: { id: string } }) {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Login/session check
   useEffect(() => {
-    const access = sessionStorage.getItem('access_granted');
-    const expiry = sessionStorage.getItem('access_expires');
-    if (access !== 'true' || !expiry || Number(expiry) < Date.now()) {
-      sessionStorage.clear();
-      router.push('/Login');
+    if (typeof window !== 'undefined') {
+      const access = sessionStorage.getItem('access_granted');
+      const expiry = parseInt(sessionStorage.getItem('access_expires') || '0');
+
+      if (access !== 'true' || Date.now() > expiry) {
+        router.push('/Login');
+      }
     }
   }, [router]);
 

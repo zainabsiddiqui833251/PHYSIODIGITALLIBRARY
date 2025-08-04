@@ -24,13 +24,15 @@ export default function BooksPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
 
-  // 🔐 Route Protection
+  // ✅ Updated: Login/session check
   useEffect(() => {
-    const access = sessionStorage.getItem('access_granted');
-    const expiry = sessionStorage.getItem('access_expires');
-    if (access !== 'true' || !expiry || Number(expiry) < Date.now()) {
-      sessionStorage.clear();
-      router.push('/Login');
+    if (typeof window !== 'undefined') {
+      const access = sessionStorage.getItem('access_granted');
+      const expiry = parseInt(sessionStorage.getItem('access_expires') || '0');
+
+      if (access !== 'true' || Date.now() > expiry) {
+        router.push('/Login');
+      }
     }
   }, [router]);
 
