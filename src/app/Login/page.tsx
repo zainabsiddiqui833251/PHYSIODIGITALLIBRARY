@@ -27,8 +27,8 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://script.google.com/macros/s/AKfycbz2j690LZBrAhyuU8YnHqtgl3Zd6PjjncelvrkT8VpJtJsbzwSYfYfwlvETJB0ZQBK5DA/exec'); // ⬅️ Replace with your actual URL
-      const latestCode = await res.text();
+      const res = await fetch(process.env.NEXT_PUBLIC_LOGIN_CODE_URL as string, { cache: 'no-store' });
+      const latestCode = (await res.text()).trim();
 
       if (codeInput.trim() === latestCode.trim()) {
         sessionStorage.setItem('access_granted', 'true');
@@ -67,9 +67,8 @@ export default function LoginPage() {
         <button
           onClick={handleLogin}
           disabled={loading}
-          className={`bg-[#c084fc] hover:bg-[#a855f7] text-white font-semibold px-4 py-2 rounded w-full transition ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+          className={`bg-[#c084fc] hover:bg-[#a855f7] text-white font-semibold px-4 py-2 rounded w-full transition ${loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
         >
           {loading ? 'Checking...' : 'Login'}
         </button>
